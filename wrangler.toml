@@ -1,0 +1,23 @@
+# ============================================================
+# Cloudflare LLM Chat — 配置 (wrangler.toml)
+# 同时适用于 wrangler pages dev / deploy
+# ============================================================
+
+name = "llm-chat"                      # 项目名（部署名，需全局唯一）
+compatibility_date = "2024-11-01"      # 运行时兼容日期
+compatibility_flags = ["nodejs_compat"] # 让 crypto.randomUUID 等 Node API 可用
+
+# ---------- 环境变量（C1 鉴权） ----------
+[vars]
+AUTH_PASS = "你的超强密码"              # 必填：登录密码（请改为强密码）
+TOKEN_TTL = "86400"                    # 可选：token 有效期，秒（默认24h）
+
+# ---------- Workers AI Binding (B1) ----------
+[[ai_bindings]]
+binding = "AI"                         # 代码里 env.AI，勿改
+
+# ---------- D1 数据库 Binding (D1) ----------
+[[d1_databases]]
+binding = "DB"                         # 代码里 env.DB，勿改
+database_name = "llm-chat-db"          # D1 数据库名称（在 Dashboard 创建后填真实名）
+database_id = "你的-D1-database-id"    # D1 数据库 ID（Dashboard 里复制）

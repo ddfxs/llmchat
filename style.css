@@ -1,0 +1,260 @@
+/* ============================================================
+ * Cloudflare Pages LLM Chat — 样式 (css/style.css)
+ * 功能：A2 深浅主题 / A6 移动端 / Markdown / 消息 / 登录 / 弹窗
+ * ============================================================ */
+
+/* ---------- 1. 主题变量（A2：浅色为默认，dark 覆盖变量） ---------- */
+:root {
+  --bg: #f6f7f9;            /* 页面背景 */
+  --panel: #ffffff;         /* 面板/卡片 */
+  --bubble-user: #3b6ff0;   /* 用户气泡 */
+  --bubble-user-text: #fff;
+  --bubble-bot: #eef0f3;    /* 机器人气泡 */
+  --text: #1f2328;
+  --text-sub: #6b7280;
+  --border: #e2e5ea;
+  --accent: #3b6ff0;
+  --danger: #d33;
+  --shadow: 0 2px 10px rgba(0,0,0,.06);
+  --code-bg: #f3f4f6;
+}
+
+body.dark {
+  --bg: #0f1115;
+  --panel: #171a21;
+  --bubble-user: #4c7cff;
+  --bubble-user-text: #fff;
+  --bubble-bot: #232731;
+  --text: #e6e8ec;
+  --text-sub: #9aa0ab;
+  --border: #2a2f3a;
+  --accent: #4c7cff;
+  --danger: #f87171;
+  --shadow: 0 2px 10px rgba(0,0,0,.4);
+  --code-bg: #1d212a;
+}
+
+/* ---------- 2. 基础重置 ---------- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background .25s, color .25s;
+}
+button { cursor: pointer; font: inherit; border: none; background: none; color: inherit; }
+.hidden { display: none !important; }
+.error { color: var(--danger); }
+
+/* ---------- 3. 登录层 (C1) ---------- */
+.overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+}
+.login-card, .modal-card {
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 28px;
+  width: min(92vw, 360px);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.login-card h2 { font-size: 1.2rem; margin-bottom: 6px; }
+.login-hint { font-size: .82rem; color: var(--text-sub); margin-bottom: 16px; }
+.login-card input {
+  width: 100%; padding: 10px; margin-bottom: 12px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--panel); color: var(--text);
+}
+.login-card button {
+  width: 100%; padding: 10px; border-radius: 8px;
+  background: var(--accent); color: #fff; font-weight: 600;
+}
+#loginError { margin-top: 10px; font-size: .85rem; }
+
+/* ---------- 4. 主布局：侧栏 + 主区 ---------- */
+#app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#sidebar {
+  width: 260px; flex-shrink: 0;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.side-head { padding: 12px; border-bottom: 1px solid var(--border); }
+.side-head .primary {
+  width: 100%; padding: 10px; border-radius: 8px;
+  background: var(--accent); color: #fff; font-weight: 600;
+}
+.session-list { flex: 1; overflow-y: auto; padding: 8px; }
+.session-item {
+  padding: 10px 12px; margin-bottom: 6px; border-radius: 8px;
+  cursor: pointer; transition: background .15s;
+}
+.session-item:hover { background: rgba(128,128,128,.12); }
+.session-item.active { background: var(--accent); color: #fff; }
+.session-item .s-title { display: block; font-weight: 600; font-size: .92rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.session-item .s-meta { font-size: .76rem; opacity: .75; }
+.side-foot { padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+.side-foot button {
+  flex: 1; padding: 9px; border-radius: 8px;
+  background: rgba(128,128,128,.12); font-size: .85rem;
+}
+.side-foot button:hover { background: rgba(128,128,128,.22); }
+
+/* ---------- 5. 主聊天区 ---------- */
+#main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+#toolbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+#toolbar select {
+  padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--panel); color: var(--text);
+}
+#toolbar button {
+  padding: 7px 12px; border-radius: 8px;
+  background: rgba(128,128,128,.12); font-size: .88rem;
+}
+#toolbar button:hover { background: rgba(128,128,128,.22); }
+#btnLogout { margin-left: auto; }
+
+#chat {
+  flex: 1; overflow-y: auto;
+  padding: 20px 16px;
+}
+
+/* ---------- 6. 消息气泡 (A2 / A8) ---------- */
+.msg { margin-bottom: 16px; max-width: 78%; }
+.msg.user { margin-left: auto; text-align: right; }
+.msg.bot  { margin-right: auto; text-align: left; }
+
+.bubble {
+  display: inline-block; text-align: left;
+  padding: 10px 14px; border-radius: 12px;
+  line-height: 1.65; font-size: .95rem;
+  white-space: pre-wrap; word-break: break-word;
+}
+.msg.user .bubble {
+  background: var(--bubble-user); color: var(--bubble-user-text);
+  border-bottom-right-radius: 4px;
+}
+.msg.bot .bubble {
+  background: var(--bubble-bot); color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+
+.copy {
+  display: inline-block; margin-top: 4px;
+  font-size: .78rem; color: var(--text-sub);
+  padding: 3px 8px; border-radius: 6px;
+}
+.copy:hover { background: rgba(128,128,128,.15); color: var(--text); }
+
+/* ---------- 7. Markdown 渲染样式 (A2) ---------- */
+.bubble.md { white-space: normal; }
+.bubble.md h1, .bubble.md h2, .bubble.md h3, .bubble.md h4 {
+  margin: 10px 0 6px; line-height: 1.3;
+}
+.bubble.md h1 { font-size: 1.35rem; }
+.bubble.md h2 { font-size: 1.2rem; }
+.bubble.md h3 { font-size: 1.08rem; }
+.bubble.md p { margin: 6px 0; }
+.bubble.md ul, .bubble.md ol { padding-left: 20px; margin: 6px 0; }
+.bubble.md li { margin: 3px 0; }
+.bubble.md strong { font-weight: 700; }
+.bubble.md em { font-style: italic; }
+.bubble.md blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 10px; margin: 8px 0; color: var(--text-sub);
+}
+.bubble.md code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  background: var(--code-bg); padding: 2px 5px; border-radius: 4px; font-size: .85em;
+}
+.bubble.md pre {
+  background: var(--code-bg); padding: 12px; border-radius: 8px;
+  overflow-x: auto; margin: 8px 0;
+}
+.bubble.md pre code { background: none; padding: 0; }
+.bubble.md table { border-collapse: collapse; margin: 8px 0; }
+.bubble.md th, .bubble.md td {
+  border: 1px solid var(--border); padding: 6px 10px;
+}
+.bubble.md a { color: var(--accent); }
+
+/* ---------- 8. 输入栏 ---------- */
+.inputbar {
+  display: flex; gap: 8px; align-items: flex-end;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+}
+#input {
+  flex: 1; resize: none;
+  padding: 10px 12px; min-height: 42px; max-height: 160px;
+  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--panel); color: var(--text);
+  font: inherit; line-height: 1.5;
+}
+#input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+#btnSend {
+  padding: 10px 18px; border-radius: 10px;
+  background: var(--accent); color: #fff; font-weight: 600;
+}
+#btnSend:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ---------- 9. 用量统计弹窗 (D2) ---------- */
+.modal-card { width: min(92vw, 420px); text-align: left; }
+.modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.modal-head h3 { font-size: 1.05rem; }
+.modal-head button { font-size: 1.1rem; color: var(--text-sub); }
+#statsBody p { margin: 6px 0; }
+#statsBody ul { padding-left: 20px; margin: 6px 0; }
+#statsBody li { margin: 3px 0; }
+
+/* ============================================================
+ * A6 移动端适配（< 768px：侧栏变抽屉，聊天区全屏）
+ * ============================================================ */
+@media (max-width: 768px) {
+  #app { flex-direction: column; }
+
+  /* 侧栏变成顶部横条 + 可横向滑动的会话列表 */
+  #sidebar {
+    width: 100%; height: auto;
+    border-right: none; border-bottom: 1px solid var(--border);
+    flex-direction: row; align-items: center;
+  }
+  .side-head { border-bottom: none; padding: 8px 10px; }
+  .side-head .primary { width: auto; padding: 8px 12px; font-size: .88rem; }
+  .session-list {
+    flex: 1; display: flex; gap: 6px; padding: 6px;
+    overflow-x: auto; white-space: nowrap;
+  }
+  .session-item { min-width: 120px; margin-bottom: 0; font-size: .85rem; }
+  .session-item .s-meta { display: none; }
+  .side-foot { border-top: none; padding: 8px; }
+  .side-foot button { font-size: .8rem; padding: 7px; }
+
+  /* 消息宽度放宽 */
+  .msg { max-width: 90%; }
+  #chat { padding: 14px 10px; }
+  #toolbar { padding: 8px 10px; flex-wrap: wrap; }
+  .inputbar { padding: 10px; }
+  #btnSend { padding: 10px 14px; }
+}
+
+/* 超窄屏时隐藏导出/统计文字，只留图标 */
+@media (max-width: 480px) {
+  .side-foot button { font-size: .74rem; }
+}
