@@ -1,75 +1,120 @@
 # llmchat
 
-基于 Cloudflare Pages、Workers AI 和 D1 的轻量中文 LLM 聊天应用。前端提供多会话聊天、Markdown 渲染、模型切换和对话导出；Pages Functions 负责鉴权、AI 请求和数据持久化。
+一个基于 Cloudflare Pages + Workers AI + D1 的轻量中文聊天应用，支持多会话、Markdown 渲染、模型切换和会话导出。
 
-## 功能
+## 1. 功能概览
 
-- 密码登录与 Bearer Token 鉴权，令牌以 SHA-256 哈希形式存储在 D1
-- 多会话及消息持久化
-- Workers AI 流式生成，可选择 Llama、DeepSeek、Qwen 或 Gemma 模型
-- Markdown 回复渲染、亮/暗主题
-- 对话 Markdown 导出及用量统计
+- 密码登录与 Bearer Token 鉴权
+- 多会话聊天记录持久化
+- 支持多个 Cloudflare AI 模型切换
+- Markdown 代码/列表/引用等富文本展示
+- 对话导出为 Markdown
+- 用量统计与会话标题管理
 
-## 技术栈
+## 2. 运行前准备
 
-- Cloudflare Pages / Pages Functions
-- Cloudflare Workers AI
-- Cloudflare D1
-- 原生 JavaScript、HTML 和 CSS
-- Wrangler 3
+确保你已具备：
 
-## 前置条件
-
-- Node.js 和 npm
+- Node.js 18+ / npm
 - Cloudflare 账号
-- 已创建的 Cloudflare D1 数据库，并可使用 Workers AI
+- 一个 Cloudflare D1 数据库
+- 可用的 Workers AI 绑定
 
-## 配置与运行
+## 3. 快速开始
 
-1. 安装依赖：
+### 3.1 安装依赖
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
-2. 在 Cloudflare 控制台创建 D1 数据库，并在数据库 Console 中执行仓库根目录的 `schema.sql`。
+### 3.2 创建数据库表
 
-3. 编辑 `wrangler.toml`，将 `database_id` 替换为实际 D1 数据库 ID，并设置 `database_name`。将 `AUTH_PASS` 改为强密码。不要将真实密码或其他密钥提交到公开仓库；部署时优先通过 Cloudflare 的加密 Secret/环境变量配置敏感值。
+在 Cloudflare D1 Console 中执行项目根目录下的 `schema.sql`，创建以下表：
 
-4. 本地启动 Pages：
+- `sessions`
+- `messages`
+- `auth_tokens`
 
-   ```bash
-   npm run dev
-   ```
+### 3.3 配置 Wrangler
 
-5. 部署到 Cloudflare Pages：
+编辑 `wrangler.toml`，至少修改以下内容：
 
-   ```bash
-   npm run deploy
-   ```
+```toml
+name = "llm-chat"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
 
-确保 Pages 项目配置了 `AI` Workers AI binding 和 `DB` D1 binding（名称需与 `wrangler.toml` 中的 binding 一致），并在部署环境中设置 `AUTH_PASS`。`TOKEN_TTL` 为可选配置，单位为秒，默认 86400 秒（24 小时）。
+[vars]
+AUTH_PASS = "你的强密码"
+TOKEN_TTL = "86400"
 
-## 项目结构
+[[ai_bindings]]
+binding = "AI"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "llm-chat-db"
+database_id = "你的-D1-database-id"
+```
+
+说明：
+
+- `AUTH_PASS`：登录时使用的访问密码
+- `TOKEN_TTL`：访问令牌有效期，单位为秒，默认 `86400`
+- `DB`：D1 数据库绑定名，代码中固定使用 `env.DB`
+- `AI`：Workers AI binding 名，代码中固定使用 `env.AI`
+
+### 3.4 本地开发
+
+```bash
+npm run dev
+```
+
+访问本地页面后，输入 `AUTH_PASS` 即可登录并开始聊天。
+
+### 3.5 部署
+
+```bash
+npm run deploy
+```
+
+部署前确认：
+
+- Cloudflare Pages 已绑定该项目
+- 已配置 `AI` 和 `DB` binding
+- 生产环境中的 `AUTH_PASS` 已正确设置
+
+## 4. 项目结构
 
 ```text
 .
-├── css/                 # 页面样式
-├── functions/           # Pages Functions API 与鉴权中间件
-│   └── api/             # auth、chat、sessions、export、stats 接口
-├── js/app.js            # 前端交互逻辑
-├── schema.sql           # D1 数据库表结构
-├── index.html           # 单页应用入口
-├── wrangler.toml        # Wrangler 与 Cloudflare 绑定配置
-└── package.json         # 本地开发和部署脚本
+├── css/
+│   └── style.css
+├── functions/
+│   ├── _middleware.js
+│   └── api/
+│       ├── auth.js
+│       ├── chat.js
+│       ├── export.js
+│       ├── sessions.js
+│       └── stats.js
+├── js/
+│   └── app.js
+├── index.html
+├── package.json
+├── schema.sql
+├── wrangler.toml
+└── README.md
 ```
 
-## 安全提示
+## 5. 安全提醒
 
-- 请在部署前将 `wrangler.toml` 中的示例密码替换为安全配置，并妥善保管凭据。
-- `/api/auth` 以外的 API 均要求有效 Bearer Token。
-- 不要在 issue、日志或客户端代码中公开密码、令牌或 Cloudflare 凭据。
+- 不要在公开仓库中直接写死真实密码
+- 令牌不会明文保存到 D1，只保存 SHA-256 哈希
+- 所有 `/api/*` 非登录接口都要求带有效 `Authorization: Bearer <token>`
+- 部署时优先使用 Cloudflare 的 Secret / 环境变量管理敏感配置
 
-## 许可证
+## 6. 许可证
 
 当前仓库未声明许可证。
